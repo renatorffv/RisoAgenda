@@ -1,17 +1,18 @@
 // Schema do RisoAgenda.
-// Rodando em SQLite para desenvolvimento local sem infraestrutura extra.
-// Para produção, troque o provider para "postgresql" e ajuste DATABASE_URL.
+// Postgres (ex: Neon via integração da Vercel). DATABASE_URL aponta para lá
+// tanto em produção quanto em desenvolvimento local.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// SQLite não suporta enums nativos no Prisma; os campos abaixo usam String
+// Os campos abaixo usam String em vez de enum nativo do Postgres para manter
 // e são validados na aplicação (ver packages/shared/src/enums.ts e schemas.ts).
 // UserRole: "PROFISSIONAL" | "CLIENTE"
 // AppointmentStatus: "CONFIRMADO" | "CANCELADO" | "CONCLUIDO"
