@@ -1,4 +1,4 @@
-import { app } from "./app";
+import { app } from "./expressApp";
 import { env } from "./lib/env";
 
 app.listen(env.port, () => {
