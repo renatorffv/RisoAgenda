@@ -27,3 +27,8 @@ app.use("/professionals", professionalsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// A Vercel detecta "app.ts" pela convenção de projetos Express e exige que
+// o app seja o export default (o export nomeado acima continua servindo
+// para o server.ts do dev local e para apps/api/api/index.ts).
+export default app;
