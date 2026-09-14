@@ -17,10 +17,6 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "risoagenda-api" }));
 
-app.get("/__debug", (req, res) =>
-  res.json({ url: req.url, originalUrl: req.originalUrl, path: req.path, baseUrl: req.baseUrl })
-);
-
 app.use("/auth", authRouter);
 app.use("/services", servicesRouter);
 app.use("/availability", availabilityRouter);
