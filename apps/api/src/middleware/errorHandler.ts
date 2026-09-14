@@ -18,5 +18,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   console.error(err);
-  res.status(500).json({ error: "Erro interno do servidor" });
+  const debugMessage = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  res.status(500).json({ error: "Erro interno do servidor", debug: debugMessage });
 }
