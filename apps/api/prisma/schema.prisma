@@ -1,0 +1,126 @@
+// Schema do RisoAgenda.
+// Rodando em SQLite para desenvolvimento local sem infraestrutura extra.
+// Para produção, troque o provider para "postgresql" e ajuste DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite não suporta enums nativos no Prisma; os campos abaixo usam String
+// e são validados na aplicação (ver packages/shared/src/enums.ts e schemas.ts).
+// UserRole: "PROFISSIONAL" | "CLIENTE"
+// AppointmentStatus: "CONFIRMADO" | "CANCELADO" | "CONCLUIDO"
+// NotificationType: "NOVO_AGENDAMENTO" | "AGENDAMENTO_CANCELADO" | "NOVA_MENSAGEM"
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  image        String?
+  phone        String?
+  role         String
+  createdAt    DateTime @default(now())
+
+  services             Service[]
+  weeklyAvailabilities WeeklyAvailability[]
+  availabilityBlocks   AvailabilityBlock[]
+
+  appointmentsAsProfessional Appointment[] @relation("ProfessionalAppointments")
+  appointmentsAsClient       Appointment[] @relation("ClientAppointments")
+
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  notifications    Notification[]
+}
+
+model Service {
+  id              String  @id @default(cuid())
+  professionalId  String
+  professional    User    @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  name            String
+  description     String  @default("")
+  durationMinutes Int
+  price           Float
+  active          Boolean @default(true)
+
+  appointments Appointment[]
+
+  @@index([professionalId])
+}
+
+model WeeklyAvailability {
+  id             String @id @default(cuid())
+  professionalId String
+  professional   User   @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  weekday        Int // 0 (domingo) a 6 (sábado)
+  startTime      String // "HH:mm"
+  endTime        String // "HH:mm"
+
+  @@index([professionalId])
+}
+
+model AvailabilityBlock {
+  id             String  @id @default(cuid())
+  professionalId String
+  professional   User    @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  date           String // "YYYY-MM-DD"
+  startTime      String // "HH:mm"
+  endTime        String // "HH:mm"
+  reason         String?
+
+  @@index([professionalId, date])
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  professionalId String
+  professional   User              @relation("ProfessionalAppointments", fields: [professionalId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId      String
+  service        Service           @relation(fields: [serviceId], references: [id])
+  date           String // "YYYY-MM-DD"
+  startTime      String // "HH:mm"
+  endTime        String // "HH:mm"
+  status         String  @default("CONFIRMADO")
+  cancelledBy    String?
+  cancelReason   String?
+  createdAt      DateTime          @default(now())
+
+  @@index([professionalId, date])
+  @@index([clientId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, senderId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  content   String
+  relatedId String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
